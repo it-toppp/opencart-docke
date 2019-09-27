@@ -1,30 +1,172 @@
 version: '2'
 services:
-  mariadb:
-    image: 'bitnami/mariadb:10.3'
-    environment:
-      - MARIADB_USER=bn_opencart
-      - MARIADB_DATABASE=bitnami_opencart
-      - ALLOW_EMPTY_PASSWORD=yes
-    volumes:
-      - 'mariadb_data:/bitnami'
-  opencart:
-    image: 'bitnami/opencart:3'
-    environment:
-      - MARIADB_HOST=mariadb
-      - MARIADB_PORT_NUMBER=3306
-      - OPENCART_DATABASE_USER=bn_opencart
-      - OPENCART_DATABASE_NAME=bitnami_opencart
-      - OPENCART_HOST=localhost
-      - ALLOW_EMPTY_PASSWORD=yes
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - 'opencart_data:/bitnami'
-    depends_on:
-      - mariadb
-      
+
+### PHP-FPM ##############################################
+    php-fpm:
+      build:
+        context: ./php-fpm
+        args:
+          - LARADOCK_PHP_VERSION=${PHP_VERSION}
+          - LARADOCK_PHALCON_VERSION=${PHALCON_VERSION}
+          - INSTALL_XDEBUG=${PHP_FPM_INSTALL_XDEBUG}
+          - INSTALL_PHPDBG=${PHP_FPM_INSTALL_PHPDBG}
+          - INSTALL_BLACKFIRE=${INSTALL_BLACKFIRE}
+          - INSTALL_SSH2=${PHP_FPM_INSTALL_SSH2}
+          - INSTALL_SOAP=${PHP_FPM_INSTALL_SOAP}
+          - INSTALL_XSL=${PHP_FPM_INSTALL_XSL}
+          - INSTALL_IMAP=${PHP_FPM_INSTALL_IMAP}
+          - INSTALL_MONGO=${PHP_FPM_INSTALL_MONGO}
+          - INSTALL_AMQP=${PHP_FPM_INSTALL_AMQP}
+          - INSTALL_CASSANDRA=${PHP_FPM_INSTALL_CASSANDRA}
+          - INSTALL_MSSQL=${PHP_FPM_INSTALL_MSSQL}
+          - INSTALL_BCMATH=${PHP_FPM_INSTALL_BCMATH}
+          - INSTALL_GMP=${PHP_FPM_INSTALL_GMP}
+          - INSTALL_PHPREDIS=${PHP_FPM_INSTALL_PHPREDIS}
+          - INSTALL_MEMCACHED=${PHP_FPM_INSTALL_MEMCACHED}
+          - INSTALL_OPCACHE=${PHP_FPM_INSTALL_OPCACHE}
+          - INSTALL_EXIF=${PHP_FPM_INSTALL_EXIF}
+          - INSTALL_AEROSPIKE=${PHP_FPM_INSTALL_AEROSPIKE}
+          - INSTALL_MYSQLI=${PHP_FPM_INSTALL_MYSQLI}
+          - INSTALL_PGSQL=${PHP_FPM_INSTALL_PGSQL}
+          - INSTALL_PG_CLIENT=${PHP_FPM_INSTALL_PG_CLIENT}
+          - INSTALL_POSTGIS=${PHP_FPM_INSTALL_POSTGIS}
+          - INSTALL_INTL=${PHP_FPM_INSTALL_INTL}
+          - INSTALL_GHOSTSCRIPT=${PHP_FPM_INSTALL_GHOSTSCRIPT}
+          - INSTALL_LDAP=${PHP_FPM_INSTALL_LDAP}
+          - INSTALL_PHALCON=${PHP_FPM_INSTALL_PHALCON}
+          - INSTALL_SWOOLE=${PHP_FPM_INSTALL_SWOOLE}
+          - INSTALL_TAINT=${PHP_FPM_INSTALL_TAINT}
+          - INSTALL_IMAGE_OPTIMIZERS=${PHP_FPM_INSTALL_IMAGE_OPTIMIZERS}
+          - INSTALL_IMAGEMAGICK=${PHP_FPM_INSTALL_IMAGEMAGICK}
+          - INSTALL_CALENDAR=${PHP_FPM_INSTALL_CALENDAR}
+          - INSTALL_FAKETIME=${PHP_FPM_INSTALL_FAKETIME}
+          - INSTALL_IONCUBE=${PHP_FPM_INSTALL_IONCUBE}
+          - INSTALL_APCU=${PHP_FPM_INSTALL_APCU}
+          - INSTALL_YAML=${PHP_FPM_INSTALL_YAML}
+          - INSTALL_RDKAFKA=${PHP_FPM_INSTALL_RDKAFKA}
+          - INSTALL_ADDITIONAL_LOCALES=${PHP_FPM_INSTALL_ADDITIONAL_LOCALES}
+          - INSTALL_MYSQL_CLIENT=${PHP_FPM_INSTALL_MYSQL_CLIENT}
+          - INSTALL_PING=${PHP_FPM_INSTALL_PING}
+          - INSTALL_SSHPASS=${PHP_FPM_INSTALL_SSHPASS}
+          - ADDITIONAL_LOCALES=${PHP_FPM_ADDITIONAL_LOCALES}
+          - INSTALL_FFMPEG=${PHP_FPM_FFMPEG}
+          - INSTALL_XHPROF=${PHP_FPM_INSTALL_XHPROF}
+          - http_proxy
+          - https_proxy
+          - no_proxy
+      volumes:
+        - ./php-fpm/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      expose:
+        - "9000"
+#      extra_hosts:
+#        - "dockerhost:${DOCKER_HOST_IP}"
+      environment:
+        - PHP_IDE_CONFIG=${PHP_IDE_CONFIG}
+        - DOCKER_HOST=tcp://docker-in-docker:2375
+        - FAKETIME=${PHP_FPM_FAKETIME}
+#      depends_on:
+#        - workspace
+      networks:
+        - backend
+
+### PHP Worker ############################################
+    php-worker:
+      build:
+        context: ./php-worker
+        args:
+          - PHP_VERSION=${PHP_VERSION}
+          - PHALCON_VERSION=${PHALCON_VERSION}
+          - INSTALL_PGSQL=${PHP_WORKER_INSTALL_PGSQL}
+          - INSTALL_BCMATH=${PHP_WORKER_INSTALL_BCMATH}
+          - INSTALL_PHALCON=${PHP_WORKER_INSTALL_PHALCON}
+          - INSTALL_SOAP=${PHP_WORKER_INSTALL_SOAP}
+          - INSTALL_ZIP_ARCHIVE=${PHP_WORKER_INSTALL_ZIP_ARCHIVE}
+          - INSTALL_MYSQL_CLIENT=${PHP_WORKER_INSTALL_MYSQL_CLIENT}
+          - INSTALL_AMQP=${PHP_WORKER_INSTALL_AMQP}
+          - INSTALL_CASSANDRA=${PHP_WORKER_INSTALL_CASSANDRA}
+          - INSTALL_GHOSTSCRIPT=${PHP_WORKER_INSTALL_GHOSTSCRIPT}
+          - INSTALL_SWOOLE=${PHP_WORKER_INSTALL_SWOOLE}
+          - INSTALL_TAINT=${PHP_WORKER_INSTALL_TAINT}
+          - INSTALL_FFMPEG=${PHP_WORKER_INSTALL_FFMPEG}
+          - INSTALL_GMP=${PHP_WORKER_INSTALL_GMP}
+          - PUID=${PHP_WORKER_PUID}
+          - PGID=${PHP_WORKER_PGID}
+      volumes:
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ./php-worker/supervisord.d:/etc/supervisord.d
+#      depends_on:
+#        - workspace
+#      extra_hosts:
+#        - "dockerhost:${DOCKER_HOST_IP}"
+      networks:
+        - backend
+
+### NGINX Server #########################################
+    nginx:
+      build:
+        context: ./nginx
+        args:
+          - PHP_UPSTREAM_CONTAINER=${NGINX_PHP_UPSTREAM_CONTAINER}
+          - PHP_UPSTREAM_PORT=${NGINX_PHP_UPSTREAM_PORT}
+          - CHANGE_SOURCE=${CHANGE_SOURCE}
+          - http_proxy
+          - https_proxy
+          - no_proxy
+      volumes:
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
+        - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
+        - ${NGINX_SSL_PATH}:/etc/nginx/ssl
+      ports:
+        - "${NGINX_HOST_HTTP_PORT}:80"
+        - "${NGINX_HOST_HTTPS_PORT}:443"
+      depends_on:
+        - php-fpm
+      networks:
+        - frontend
+        - backend
+
+
+### MariaDB ##############################################
+    mariadb:
+      build:
+        context: ./mariadb
+        args:
+          - http_proxy
+          - https_proxy
+          - no_proxy
+          - MARIADB_VERSION=${MARIADB_VERSION}
+      volumes:
+        - ${DATA_PATH_HOST}/mariadb:/var/lib/mysql
+        - ${MARIADB_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+      ports:
+        - "${MARIADB_PORT}:3306"
+      environment:
+        - TZ=${WORKSPACE_TIMEZONE}
+        - MYSQL_DATABASE=${MARIADB_DATABASE}
+        - MYSQL_USER=${MARIADB_USER}
+        - MYSQL_PASSWORD=${MARIADB_PASSWORD}
+        - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      networks:
+        - backend
+
+### phpMyAdmin ###########################################
+    phpmyadmin:
+      build: ./phpmyadmin
+      environment:
+        - PMA_ARBITRARY=1
+        - MYSQL_USER=${PMA_USER}
+        - MYSQL_PASSWORD=${PMA_PASSWORD}
+        - MYSQL_ROOT_PASSWORD=${PMA_ROOT_PASSWORD}
+      ports:
+        - "${PMA_PORT}:80"
+      depends_on:
+        - "${PMA_DB_ENGINE}"
+      networks:
+        - frontend
+        - backend
+
 ### ElasticSearch ########################################
     elasticsearch:
       build: ./elasticsearch
@@ -48,8 +190,8 @@ services:
       networks:
         - frontend
         - backend 
-   
-   ### Beanstalkd ###########################################
+
+### Beanstalkd ###########################################
     beanstalkd:
       build: ./beanstalkd
       ports:
@@ -59,7 +201,7 @@ services:
         - php-fpm
       networks:
         - backend
-     
+
     ### Beanstalkd Console ###################################
     beanstalkd-console:
       build: ./beanstalkd-console
@@ -70,8 +212,4 @@ services:
       networks:
         - backend
 
-volumes:
-  mariadb_data:
-    driver: local
-  opencart_data:
-    driver: local
+

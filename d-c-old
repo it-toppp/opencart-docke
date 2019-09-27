@@ -1,0 +1,77 @@
+version: '2'
+services:
+  mariadb:
+    image: 'bitnami/mariadb:10.3'
+    environment:
+      - MARIADB_USER=bn_opencart
+      - MARIADB_DATABASE=bitnami_opencart
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - 'mariadb_data:/bitnami'
+  opencart:
+    image: 'bitnami/opencart:3'
+    environment:
+      - MARIADB_HOST=mariadb
+      - MARIADB_PORT_NUMBER=3306
+      - OPENCART_DATABASE_USER=bn_opencart
+      - OPENCART_DATABASE_NAME=bitnami_opencart
+      - OPENCART_HOST=localhost
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - 'opencart_data:/bitnami'
+    depends_on:
+      - mariadb
+      
+### ElasticSearch ########################################
+    elasticsearch:
+      build: ./elasticsearch
+      volumes:
+        - elasticsearch:/usr/share/elasticsearch/data
+      environment:
+        - cluster.name=laradock-cluster
+        - node.name=laradock-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - cluster.initial_master_nodes=laradock-node
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      ports:
+        - "${ELASTICSEARCH_HOST_HTTP_PORT}:9200"
+        - "${ELASTICSEARCH_HOST_TRANSPORT_PORT}:9300"
+      depends_on:
+        - php-fpm
+      networks:
+        - frontend
+        - backend 
+   
+   ### Beanstalkd ###########################################
+    beanstalkd:
+      build: ./beanstalkd
+      ports:
+        - "${BEANSTALKD_HOST_PORT}:11300"
+      privileged: true
+      depends_on:
+        - php-fpm
+      networks:
+        - backend
+     
+    ### Beanstalkd Console ###################################
+    beanstalkd-console:
+      build: ./beanstalkd-console
+      ports:
+        - "${BEANSTALKD_CONSOLE_HOST_PORT}:2080"
+      depends_on:
+        - beanstalkd
+      networks:
+        - backend
+
+volumes:
+  mariadb_data:
+    driver: local
+  opencart_data:
+    driver: local
