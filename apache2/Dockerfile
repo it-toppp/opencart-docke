@@ -1,24 +1,23 @@
-FROM webdevops/apache:ubuntu-16.04
+FROM php:7.2-apache
+MAINTAINER aaron <info@aamservices.uk>
 
-LABEL maintainer="Eric Pfeiffer <computerfr33k@users.noreply.github.com>"
+RUN a2enmod rewrite headers
 
-ARG PHP_UPSTREAM_CONTAINER=php-fpm
-ARG PHP_UPSTREAM_PORT=9000
-ARG PHP_UPSTREAM_TIMEOUT=60
-ARG DOCUMENT_ROOT=/var/www/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git zip libzip-dev
 
-ENV WEB_PHP_SOCKET=${PHP_UPSTREAM_CONTAINER}:${PHP_UPSTREAM_PORT}
+RUN set -xe \
+    && apt-get update \
+    && apt-get install -y libpng-dev libjpeg-dev libmcrypt-dev unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
+    && docker-php-ext-install gd mbstring mysqli pdo_mysql zip \
+    && pecl install mcrypt-1.0.2 \
+    && docker-php-ext-enable mcrypt
 
-ENV WEB_DOCUMENT_ROOT=${DOCUMENT_ROOT}
+COPY php.ini $PHP_INI_DIR/conf.d/php.ini
 
-ENV WEB_PHP_TIMEOUT=${PHP_UPSTREAM_TIMEOUT}
 
-EXPOSE 80 443
+WORKDIR /var/www/html
 
-WORKDIR /var/www/
-
-COPY vhost.conf /etc/apache2/sites-enabled/vhost.conf
-
-ENTRYPOINT ["/opt/docker/bin/entrypoint.sh"]
-
-CMD ["supervisord"]
+#RUN  chown -R www-data:www-data /var/www

@@ -1,0 +1,68 @@
+server {
+
+    listen 80;
+    listen [::]:80;
+
+    server_name srv0.pp.ua;
+
+  charset utf-8;
+  index index.php index.html;
+  disable_symlinks if_not_owner from=$root_path;
+  set $root_path /var/www;
+  root $root_path;
+ 
+    location / {
+        try_files $uri $uri/ @opencart;
+    }
+
+    location @opencart {
+        rewrite ^/(.+)$ /index.php?_route_=$1 last;
+    }
+
+location = /sitemap.xml {
+  rewrite ^(.*)$ /index.php?route=extension/feed/google_sitemap break;
+}
+
+location = /googlebase.xml {
+  rewrite ^(.*)$ /index.php?route=extension/feed/google_base break;
+}
+
+location /system {
+  rewrite ^/system/download/(.*) /index.php?route=error/not_found break;
+}
+
+location /api {
+  rewrite ^/api/session /index.php?route=api/price_list/session break;
+  rewrite ^/api/cart /index.php?route=api/price_list/cart break;
+  rewrite ^/api/customer /index.php?route=api/price_list/customer break;
+}
+
+
+    location ~ \.php$ {
+        try_files $uri /index.php =404;
+        fastcgi_pass php-upstream;
+        fastcgi_index index.php;
+#        fastcgi_buffers 16 16k;
+#        fastcgi_buffer_size 32k;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+#        fastcgi_read_timeout 600;
+        include fastcgi_params;
+    fastcgi_intercept_errors on;
+    fastcgi_ignore_client_abort off;
+    fastcgi_connect_timeout 60;
+    fastcgi_send_timeout 180;
+    fastcgi_read_timeout 180;
+    fastcgi_buffer_size 128k;
+    fastcgi_buffers 4 256k;
+    fastcgi_busy_buffers_size 256k;
+    fastcgi_temp_file_write_size 256k;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+
+    error_log /var/log/nginx/laravel_error.log;
+    access_log /var/log/nginx/laravel_access.log;
+}
