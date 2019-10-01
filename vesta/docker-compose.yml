@@ -8,11 +8,10 @@ services:
     container_name: vesta
     cap_add: ['NET_RAW', 'NET_ADMIN']
 #    privileged: true
-    hostname: srv0.pp.ua
     volumes:
-      - "/opt/vestacp/backup:/backup"
-      - "/opt/vestacp/vesta:/vesta"
-      - "/opt/vestacp/home:/home"
+      - "./backup:/backup"
+      - "./vesta:/vesta"
+      - "./home:/home"
     ports:
 #      - "3322:22"
       - "80:80"
