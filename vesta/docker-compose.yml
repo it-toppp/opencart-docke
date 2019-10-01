@@ -31,6 +31,7 @@ services:
 
   elasticsearch:
       image: docker.elastic.co/elasticsearch/elasticsearch:6.5.4
+      restart: always
       volumes:
         - elasticsearch:/usr/share/elasticsearch/data
       environment:
@@ -50,6 +51,7 @@ services:
       depends_on:
         - vesta
   php-worker:
+      restart: always
       build:
         context: ./php-worker
         args:
@@ -73,19 +75,27 @@ services:
       volumes:
         - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
         - ./php-worker/supervisord.d:/etc/supervisord.d
-#      depends_on:
-#        - workspace
-#      extra_hosts:
-#        - "dockerhost:${DOCKER_HOST_IP}"
-      networks:
-        - backend
 
 
    ### Beanstalkd ###########################################
   beanstalkd:
+      restart: always
       image: schickling/beanstalkd
 #      ports:
 #        - "${BEANSTALKD_HOST_PORT}:11300"
       privileged: true
+      depends_on:
+        - vesta
+### phpMyAdmin ###########################################
+    phpmyadmin:
+      restart: always
+      image: phpmyadmin/phpmyadmin
+      environment:
+        - PMA_ARBITRARY=1
+        - MYSQL_USER=${PMA_USER}
+        - MYSQL_PASSWORD=${PMA_PASSWORD}
+        - MYSQL_ROOT_PASSWORD=${PMA_ROOT_PASSWORD}
+      ports:
+        - "${PMA_PORT}:80"
       depends_on:
         - vesta
